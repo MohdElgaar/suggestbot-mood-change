@@ -1,0 +1,11 @@
+.right {
+    float: right;
+    position: static;
+    width: 35%;
+}
+
+.left {
+    float: left;
+    position: static;
+    width: 60%;
+}
