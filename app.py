@@ -99,7 +99,7 @@ def pie_chart(df, selected = 'Pos'):
     pie = go.Pie(labels=label, values=value, textinfo='label+percent', name = "pie")
     layout = go.Layout(
         {
-            "title": "Pie-chart",
+            "title": "Pie-chart"
         }
     )
     fig = go.Figure(data=[pie], layout = layout)
