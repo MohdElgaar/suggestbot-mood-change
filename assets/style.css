@@ -23,11 +23,11 @@
   border: none;
   }
 
-#pos {
+#Pos {
   background-color: #4CAF50;
 }
 
-#neg {
+#Neg {
   background-color: #D2553A;
 }
 
@@ -83,4 +83,8 @@ body {
     margin-top: 30px;
     box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
     border-radius: 8px;
+}
+
+#pie1, #pie2 {
+    padding: 50px;
 }

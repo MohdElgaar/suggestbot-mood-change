@@ -7,6 +7,7 @@ import pandas as pd
 from datetime import date, time, datetime
 
 app = dash.Dash(__name__)
+server = app.server
 
 placeholder_data = pd.DataFrame({'action': ['Facebook (App)', 'Call',
     'Weather Change', 'Exercise', 'Youtube (App)', 'Netflix (App)', 'Extra'],
@@ -140,14 +141,15 @@ app.layout = html.Div(id='bottom', children = [
             html.Div(id='plot', children=[dcc.Graph(id = 'line_plot')]),
             html.Center([html.Button("Show UV Exposure", id = "UV_button",
                 n_clicks = 0)])
-            ], style={'display': 'block'})] ,
+            ], style={'display': 'block'}),
+        ],
         style={'display': 'block'}),
-
-    html.Div(id='pie1', className='left', children=[dcc.Graph(id='pie-chart1')]
+    html.Div(className = 'left', children = [html.Center([
+    html.Div(id='pie1', children=[dcc.Graph(id='pie-chart1')]
              , style={'display': 'none'}),
-    html.Div(id='pie2', className='left', children=[dcc.Graph(id='pie-chart2')]
+    html.Div(id='pie2', children=[dcc.Graph(id='pie-chart2')]
              , style={'display': 'none'})
-
+    ])]),
 
     ])
 
@@ -163,23 +165,25 @@ def callback(n_clicks):
 
 
 @app.callback(
-   [Output('pie1', 'style'), Output('pie-chart1', 'figure'), Output('line1', 'style')],
+   [Output('pie1', 'style'), Output('pie-chart1', 'figure'),
+       Output('line1', 'style'), Output('Pos', 'style')],
    [Input('Pos', 'n_clicks')])
 def pospie(n_clicks):
     if n_clicks % 2 == 0:
-        return {'display': 'none'}, pie_chart(placeholder_data), {'display': 'block'}
+        return {'display': 'none'}, pie_chart(placeholder_data), {'display': 'block'}, {'background-color': 'lightgray'}
     else:
-        return {'display': 'block'}, pie_chart(placeholder_data, 'Pos'), {'display': 'none'}
+        return {'display': 'block'}, pie_chart(placeholder_data, 'Pos'), {'display': 'none'}, {}
 
 
 @app.callback(
-   [Output('pie2', 'style'), Output('pie-chart2', 'figure'), Output('line2', 'style')],
+   [Output('pie2', 'style'), Output('pie-chart2', 'figure'),
+       Output('line2', 'style'), Output('Neg', 'style')],
    [Input('Neg', 'n_clicks')])
 def negpie(n_clicks):
     if n_clicks % 2 == 0:
-        return {'display': 'none'}, pie_chart(placeholder_data, 'Neg'), {'display': 'block'}
+        return {'display': 'none'}, pie_chart(placeholder_data, 'Neg'), {'display': 'block'}, {'background-color': 'lightgray'}
     else:
-        return {'display': 'block'}, pie_chart(placeholder_data, 'Neg'), {'display': 'none'}
+        return {'display': 'block'}, pie_chart(placeholder_data, 'Neg'), {'display': 'none'}, {}
 
 
 
