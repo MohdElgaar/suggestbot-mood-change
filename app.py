@@ -7,6 +7,7 @@ import pandas as pd
 from datetime import date, time, datetime
 
 app = dash.Dash(__name__)
+server = app.server
 
 placeholder_data = pd.DataFrame({'action': ['Facebook (App)', 'Call',
     'Weather Change', 'Exercise', 'Youtube (App)', 'Netflix (App)', 'Extra'],
