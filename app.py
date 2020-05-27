@@ -1,6 +1,7 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+from dash.dependencies import Input, Output
 import plotly.graph_objs as go
 import pandas as pd
 from datetime import date, time, datetime
@@ -84,7 +85,7 @@ def line_plot(df_line, df_data, UV = False):
         return {'data': [valence, UV_exposure],
                 'layout': layout}
     else:
-        return {'data': [valence], layout: layout}
+        return {'data': [valence], 'layout': layout}
 
 app.layout = html.Div([
     html.Div(className = 'right', children = [
@@ -99,11 +100,21 @@ app.layout = html.Div([
         ]),
     html.Div(className = 'left', children = [
         html.H1("Welcome"),
-        dcc.Graph(id = 'graph',
-            figure = line_plot(placeholder_data_line, placeholder_data,
-                UV=True))
+        dcc.Graph(id = 'line_plot'),
+        html.Center([html.Button("Show UV Exposure", id = "UV_button",
+            n_clicks = 0)])
         ])
     ])
+
+@app.callback(
+        Output("line_plot", 'figure'), [Input("UV_button", "n_clicks")]
+        )
+def callback(n_clicks):
+    print('----', n_clicks)
+    if n_clicks % 2 == 0:
+        return line_plot(placeholder_data_line, placeholder_data, UV=False)
+    else:
+        return line_plot(placeholder_data_line, placeholder_data, UV=True)
 
 if __name__ == '__main__':
     app.run_server(debug=True)
