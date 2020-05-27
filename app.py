@@ -11,7 +11,9 @@ placeholder_data = pd.DataFrame({'action': ['Facebook (App)', 'Call',
     'Weather Change', 'Exercise', 'Youtube (App)', 'Netflix (App)', 'Extra'],
     'type': ['Pos', 'Pos', 'Pos', 'Neg', 'Neg', 'Neg', 'Pos'],
     'time': [time(13, 00), time(15, 0), time(12, 0), time(11, 0),
-        time(19, 0), time(17, 0), None]})
+        time(19, 0), time(17, 0), None],
+    'icon': ['fb.png', 'phone.png', 'weather.png', 'workout.png',
+        'yt.png', 'netflix.png', None]})
 
 placeholder_data_line = pd.DataFrame({
     'time': [time(i) for i in range(9,22)],
@@ -40,15 +42,42 @@ def fill_table(df):
 def line_plot(df_line, df_data, UV = False):
     valence = go.Scatter(x = df_line['time'], y = df_line['valence'],
             name = "Valence")
+
+    df_data.dropna(subset=['time'], inplace=True)
+    max_time = 21
+    min_time = 9
+    max_valence = max(df_line['valence'])
+    min_valence = -5
     
-    layout = {'images':
-                    [{"x": (13-9)/(21-9), "y": (7+5-4+1)/(7+5),
-                        'sizex': 0.1, 'sizey': 0.1,
-                        'source': "/assets/fb.png",
-                        'xanchor': "left",
-                      'xref': "paper",
-                      'yanchor': "center",
-                      'yref': "paper"}]}
+    layout = {'images': []}
+    for _, item in df_data.iterrows():
+        cur_valence = df_line[df_line['time'] == item['time']].iloc[0]['valence']
+        if item['icon']:
+            layout['images'].append({
+                "x": (item['time'].hour-min_time)/\
+                        (max_time-min_time),
+                "y": (cur_valence-min_valence)/\
+                        (max_valence - min_valence + 1),
+                'sizex': 0.08, 'sizey': 0.08,
+                'source': "/assets/%s"%item['icon'],
+                'xanchor': "left",
+                'xref': "paper",
+                'yanchor': "center",
+                'yref': "paper"})
+
+            layout['images'].append({
+                "x": (item['time'].hour-min_time)/\
+                        (max_time-min_time),
+                "y": (cur_valence-min_valence)/\
+                        (max_valence - min_valence + 1),
+                'sizex': 0.08, 'sizey': 0.08,
+                'source': "/assets/red.png" if item['type'] == 'Pos' else\
+                        "/assets/green.png",
+                'xanchor': "left",
+                'xref': "paper",
+                'yanchor': "center",
+                'yref': "paper",
+                'opacity': 0.3})
 
     if UV:
         UV_exposure = go.Scatter(x = df_line['time'], y = df_line['UV'], name = "UV")
