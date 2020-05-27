@@ -50,7 +50,8 @@ def line_plot(df_line, df_data, UV = False):
     max_valence = max(df_line['valence'])
     min_valence = -5
     
-    layout = {'images': []}
+    layout = {'images': [],
+            'paper_bgcolor': 'lightgray'}
     for _, item in df_data.iterrows():
         cur_valence = df_line[df_line['time'] == item['time']].iloc[0]['valence']
         if item['icon']:
@@ -87,20 +88,27 @@ def line_plot(df_line, df_data, UV = False):
     else:
         return {'data': [valence], 'layout': layout}
 
-app.layout = html.Div([
+app.layout = html.Div(id='bottom', children = [
     html.Div(className = 'right', children = [
-        html.Table([html.Thead(
-            [html.Tr(
-                [html.Th(["Positive"]),
-                html.Th(["Negative"])
+        html.Table(className = 'content-table', children = [
+            html.Thead([
+                html.Tr([
+                    # html.Th(id='pos', children = ["Positive"]),
+                    html.Th([
+                    html.Button("Positive", id = 'pos'),
+                    ]),
+                    # html.Th(id='neg', children = ["Negative"])
+                    html.Th([
+                    html.Button("Negative", id = 'neg')
+                    ]),
                 ])
                 ]),
             html.Tbody(fill_table(placeholder_data))
             ])
         ]),
     html.Div(className = 'left', children = [
-        html.H1("Welcome"),
-        dcc.Graph(id = 'line_plot'),
+        html.H1("Positive & Negative Mood Influencers"),
+        html.Div(id='plot', children=[dcc.Graph(id = 'line_plot')]),
         html.Center([html.Button("Show UV Exposure", id = "UV_button",
             n_clicks = 0)])
         ])
@@ -110,7 +118,6 @@ app.layout = html.Div([
         Output("line_plot", 'figure'), [Input("UV_button", "n_clicks")]
         )
 def callback(n_clicks):
-    print('----', n_clicks)
     if n_clicks % 2 == 0:
         return line_plot(placeholder_data_line, placeholder_data, UV=False)
     else:
