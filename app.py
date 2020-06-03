@@ -12,7 +12,7 @@ server = app.server
 
 placeholder_data = pd.DataFrame({'action': ['Facebook (App)', 'Call',
     'Weather Change', 'Exercise', 'Youtube (App)', 'Netflix (App)', 'Extra'],
-    'type': ['Pos', 'Pos', 'Pos', 'Neg', 'Neg', 'Neg', 'Pos'],
+    'type': ['Neg', 'Neg', 'Neg', 'Pos', 'Pos', 'Pos', 'Pos'],
     'time': [time(13, 00), time(15, 0), time(12, 0), time(11, 0),
         time(19, 0), time(17, 0), None],
     'icon': ['fb.png', 'phone.png', 'weather.png', 'workout.png',
@@ -77,8 +77,8 @@ def line_plot(df_line, df_data, UV = False):
                 "y": (cur_valence-min_valence)/\
                         (max_valence - min_valence + 1),
                 'sizex': 0.08, 'sizey': 0.08,
-                'source': "/assets/red.png" if item['type'] == 'Pos' else\
-                        "/assets/green.png",
+                'source': "/assets/green.png" if item['type'] == 'Pos' else\
+                        "/assets/red.png",
                 'xanchor': "left",
                 'xref': "paper",
                 'yanchor': "center",
