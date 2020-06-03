@@ -7,6 +7,7 @@ import pandas as pd
 from datetime import date, time, datetime
 
 app = dash.Dash(__name__)
+app.title = 'Mood Swingers'
 server = app.server
 
 placeholder_data = pd.DataFrame({'action': ['Facebook (App)', 'Call',
@@ -133,7 +134,12 @@ app.layout = html.Div(id='bottom', children = [
                 ])
                 ]),
             html.Tbody(fill_table(placeholder_data))
-            ])
+            ]),
+        html.Div(className = 'tooltip', children = [
+            html.Div(className = 'help', children = ["?"]),
+            html.Div(className = 'tooltiptext', children = [
+                'Click on Positive or Negative'])
+            ]),
         ]),
     html.Div(id='line2', children = [
         html.Div(id='line1', className = 'left', children = [
