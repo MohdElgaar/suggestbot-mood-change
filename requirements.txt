@@ -21,3 +21,4 @@ lazr.uri==1.0.3
 lazy-object-proxy==1.4.1
 pandas==0.25.3
 plotly==4.7.1
+boto3==1.13.24
