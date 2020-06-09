@@ -12,10 +12,6 @@ app.title = 'Mood Swingers'
 server = app.server
 
 s3 = boto3.client('s3')
-response = s3.list_buckets()
-for bucket in response['Buckets']:
-    print(f'  {bucket["Name"]}')
-
 
 placeholder_data = pd.DataFrame({'action': ['Facebook (App)', 'Call',
     'Weather Change', 'Exercise', 'Youtube (App)', 'Netflix (App)', 'Extra'],
@@ -149,9 +145,7 @@ app.layout = html.Div(id='bottom', children = [
             ]),
         ]),
     html.Div(id='line2', children = [
-        html.Div(id='line1', className = 'left', children = 
-            [html.P(x['Name']) for x in response['Buckets']] + 
-            [
+        html.Div(id='line1', className = 'left', children = [
             html.H1("Positive & Negative Mood Influencers"),
             html.Div(id='plot', children=[dcc.Graph(id = 'line_plot')]),
             html.Center([html.Button("Show UV Exposure", id = "UV_button",
