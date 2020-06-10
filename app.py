@@ -17,8 +17,8 @@ server = app.server
 datam = DataManager()
 UIDs = datam.uids
 
-min_t = placeholder_data_line['time'].min().hour
-max_t = placeholder_data_line['time'].max().hour
+# min_t = placeholder_data_line['time'].min().hour
+# max_t = placeholder_data_line['time'].max().hour
 
 
 # placeholder_data = pd.DataFrame({'action': ['Facebook (App)', 'Call',
@@ -222,8 +222,8 @@ app.layout = html.Div(id='bottom', children = [
             html.Div([
                 dcc.RangeSlider(
                     id='slider',
-                    min=min_t,
-                    max=max_t,
+                    # min=min_t,
+                    # max=max_t,
                     step=1,
                     value=[9, 21],
                     marks={
