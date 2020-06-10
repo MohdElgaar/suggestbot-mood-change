@@ -17,7 +17,9 @@ server = app.server
 datam = DataManager()
 UIDs = datam.uids
 
-icon_dir = {}
+min_t = placeholder_data_line['time'].min().hour
+max_t = placeholder_data_line['time'].max().hour
+
 
 # placeholder_data = pd.DataFrame({'action': ['Facebook (App)', 'Call',
 #     'Weather Change', 'Exercise', 'Youtube (App)', 'Netflix (App)', 'Extra'],
