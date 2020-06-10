@@ -48,7 +48,6 @@ def fill_table(df):
 
     rows = []
 
-    print(len(pos),len(neg))
     for p,n in zip(pos, neg):
         rows.append(html.Tr([html.Td([p]), html.Td([n])]))
 
@@ -90,7 +89,6 @@ def line_plot(df_line, df_data, UV = False):
         if not name in df_data['meta']:
             continue
         time = pd.to_datetime(df_data['meta'][name]['times'][0], unit='ns')
-        print(time)
         cur_valence = interpolate_time(df_line, time)['Valence']
         if name in icon_dir:
             icon = icon_dir[name]
@@ -136,9 +134,13 @@ def pie_chart(df, selected = 'Pos'):
         return None
 
     colors = ['gold', 'mediumturquoise', 'darkorange', 'lightgreen']
-    chosen = df[df['type'] == selected]
-    label = chosen['action']
-    value = chosen['effects']
+
+    label, value = [], []
+    for i in range(len(df['actions'])):
+        if df['types'][i] == selected:
+            label.append(df['actions'][i])
+            value.append(df['effects'][i])
+
     pie = go.Pie(labels=label, values=value, textinfo='label+percent', name = "pie")
     layout = go.Layout(
         {
@@ -186,6 +188,7 @@ app.layout = html.Div(id='bottom', children = [
         html.Div(id='line1', className = 'left', children = [
             html.H1("Positive & Negative Mood Influencers"),
             dcc.Dropdown(id='uid', options=[{'label': x, 'value': x} for x in UIDs], value=UIDs[0]),
+            dcc.Loading(id="loading-1", type="default", children=html.Div(id="loading-output-1")),
             html.Div(id='plot', children=[dcc.Graph(id = 'line_plot')]),
             html.Center([html.Button("Show UV Exposure", id = "UV_button",
                 n_clicks = 0)])
@@ -202,13 +205,13 @@ app.layout = html.Div(id='bottom', children = [
     ])
 
 @app.callback(
-    Output('sync', 'data'),
+    [Output('sync', 'data'),Output("loading-output-1", "children")],
     [Input('uid','value')])
 def sync(uid):
     print("[INFO] Starting sync")
     datam.update(uid)
     print("[INFO] End sync")
-    return True
+    return True, True
 
 @app.callback(
         [Output('table-body', 'children')],
