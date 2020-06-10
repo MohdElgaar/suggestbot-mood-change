@@ -8,6 +8,7 @@ import plotly.graph_objs as go
 import pandas as pd
 from datetime import date, time, datetime
 from data import DataManager
+from os.path import isfile
 
 app = dash.Dash(__name__)
 app.title = 'Mood Swingers'
@@ -80,7 +81,7 @@ def line_plot(df_line, df_data, UV = False):
     max_time = 21
     min_time = 9
     max_valence = max(df_line['Valence'])
-    min_valence = -5
+    min_valence = -2
 
     layout = {'images': [],
             'paper_bgcolor': 'lightgray'}
@@ -90,15 +91,16 @@ def line_plot(df_line, df_data, UV = False):
             continue
         time = pd.to_datetime(df_data['meta'][name]['times'][0], unit='ns')
         cur_valence = interpolate_time(df_line, time)['Valence']
-        if name in icon_dir:
-            icon = icon_dir[name]
+
+        icon_file = 'assets/%s.png'%name
+        if isfile(icon_file):
             layout['images'].append({
                 "x": (time.hour-min_time)/\
                         (max_time-min_time),
                 "y": (cur_valence-min_valence)/\
                         (max_valence - min_valence + 1),
                 'sizex': 0.08, 'sizey': 0.08,
-                'source': "/assets/%s"%icon,
+                'source': icon_file,
                 'xanchor': "left",
                 'xref': "paper",
                 'yanchor': "center",
