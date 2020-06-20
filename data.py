@@ -1,20 +1,30 @@
+from glob import glob
 import boto3
 import pandas as pd
 from datetime import date, time, datetime
 from collections import Counter
 
+pd.options.mode.chained_assignment = None
+
+debug = True
+
 class DataManager():
     def __init__(self):
-        self.s3 = boto3.resource('s3')
-        self.bucket = self.s3.Bucket('mood-suggest')
+        if debug:
+            esm_df = pd.read_csv("data/esm_data.csv")
+            self.esm_df = esm_df
+        else:
+            self.s3 = boto3.resource('s3')
+            self.bucket = self.s3.Bucket('mood-suggest')
 
-        esm_csv = self.bucket.Object('esm_data.csv').get()
-        self.esm_df = pd.read_csv(esm_csv['Body'])
+            esm_csv = self.bucket.Object('esm_data.csv').get()
+            self.esm_df = pd.read_csv(esm_csv['Body'])
 
         self.uids = self.esm_df.UID.unique()
         self.current = None
         self.data = None
         self.line_data = None
+        self.n_pos, self.n_neg = 0,0
 
     def update(self, uid):
         if uid != self.current:
@@ -24,7 +34,7 @@ class DataManager():
 
     def generate_data(self, uid):
         mood_data = self.esm_df.loc[self.esm_df.UID == uid]
-        mood_data['timestamp'] = pd.to_datetime(mood_data['responseTime_unixtimestamp'], unit='s')
+        mood_data.loc[:,'timestamp'] = pd.to_datetime(mood_data['responseTime_unixtimestamp'], unit='s')
         mood_data.set_index('timestamp', drop=True, inplace=True)
         mood_data = mood_data.resample('100T').mean()
         mood_data['change'] = mood_data['Valence'] - mood_data['Valence'].shift(1)
@@ -77,20 +87,9 @@ class DataManager():
                 types.append('Neg')
         return {'actions': candidates, 'types': types, 'meta': meta, 'effects': candidate_ratios}
 
-        # return pd.DataFrame({'action': ['Facebook (App)', 'Call',
-        #     'Weather Change', 'Exercise', 'Youtube (App)', 'Netflix (App)', 'Extra'],
-        #     'type': ['Neg', 'Neg', 'Neg', 'Pos', 'Pos', 'Pos', 'Pos'],
-        #     'time': [time(13, 00), time(15, 0), time(12, 0), time(11, 0),
-        #         time(19, 0), time(17, 0), None],
-        #     'icon': ['fb.png', 'phone.png', 'weather.png', 'workout.png',
-        #         'yt.png', 'netflix.png', None],
-        #     'effects': [4, 2, 1, 3, 5, 1, 2]
-        #         })
-
-
     def generate_line_data(self, uid):
         mood_data = self.esm_df.loc[self.esm_df.UID == uid]
-        mood_data['time'] = pd.to_datetime(mood_data['responseTime_unixtimestamp'], unit='s')
+        mood_data.loc[:,'time'] = pd.to_datetime(mood_data['responseTime_unixtimestamp'], unit='s')
         line_data = mood_data.loc[:,['time','Valence']]
 
         df = self.get_data('extracted/P%d/AmbientLight'%uid)
@@ -103,13 +102,24 @@ class DataManager():
 
     def get_data(self, path):
         df = None
-        for obj in self.bucket.objects.filter(Prefix=path):
-          print('[INFO] Downloading:', obj.key)
-          if df is None:
-            df = pd.read_csv(obj.get()['Body'])
-          else:
-            df = df.append(pd.read_csv(obj.get()['Body']))
-        df.reset_index(inplace=True, drop=True)
-        df['timestamp'] = pd.to_datetime(df['timestamp'],unit='ms')
-        df.set_index('timestamp', inplace=True)
+        if debug:
+            path = 'data/' + path + '*'
+            for fn in glob(path):
+              if df is None:
+                df = pd.read_csv(fn)
+              else:
+                df = df.append(pd.read_csv(fn))
+            df.reset_index(inplace=True, drop=True)
+            df['timestamp'] = pd.to_datetime(df['timestamp'],unit='ms')
+            df.set_index('timestamp', inplace=True)
+        else:
+            for obj in self.bucket.objects.filter(Prefix=path):
+              print('[INFO] Downloading:', obj.key)
+              if df is None:
+                df = pd.read_csv(obj.get()['Body'])
+              else:
+                df = df.append(pd.read_csv(obj.get()['Body']))
+            df.reset_index(inplace=True, drop=True)
+            df['timestamp'] = pd.to_datetime(df['timestamp'],unit='ms')
+            df.set_index('timestamp', inplace=True)
         return df

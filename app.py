@@ -1,3 +1,4 @@
+import os
 import boto3
 import numpy as np
 import dash
@@ -6,7 +7,7 @@ import dash_html_components as html
 from dash.dependencies import Input, Output
 import plotly.graph_objs as go
 import pandas as pd
-from datetime import date, time, datetime
+from datetime import date, time, datetime, timedelta
 from data import DataManager
 from os.path import isfile
 
@@ -16,23 +17,6 @@ server = app.server
 
 datam = DataManager()
 UIDs = datam.uids
-
-icon_dir = {}
-
-# placeholder_data = pd.DataFrame({'action': ['Facebook (App)', 'Call',
-#     'Weather Change', 'Exercise', 'Youtube (App)', 'Netflix (App)', 'Extra'],
-#     'type': ['Neg', 'Neg', 'Neg', 'Pos', 'Pos', 'Pos', 'Pos'],
-#     'time': [time(13, 00), time(15, 0), time(12, 0), time(11, 0),
-#         time(19, 0), time(17, 0), None],
-#     'icon': ['fb.png', 'phone.png', 'weather.png', 'workout.png',
-#         'yt.png', 'netflix.png', None],
-#     'effects': [4, 2, 1, 3, 5, 1, 2]
-#         })
-
-# placeholder_data_line = pd.DataFrame({
-#     'time': [time(i) for i in range(9,22)],
-#     'valence': [3, 5, 6, 7, 4, 2, -1, -4, -2, 0, 2, 3, 3],
-#     'UV': [0.5, 0.5, 1, 5, 4, 5, 0.5, 0.5, 0.5, 3, 0, 0, 0]})
 
 def fill_table(df):
     if df is None:
@@ -46,6 +30,8 @@ def fill_table(df):
             neg.append(df['actions'][i])
 
     maxlen = min(len(pos), len(neg))
+    datam.n_pos = len(pos)
+    datam.n_neg = len(neg)
 
     rows = []
 
@@ -67,60 +53,67 @@ def interpolate_time(df, time):
     y = pd.concat([x,df]).sort_index().interpolate('time')
     return y[time:time]
 
-def line_plot(df_line, df_data, UV = False):
+def line_plot(df_line, df_data, UV = False, date=None):
     if df_line is None or df_data is None:
         return {'data': [None]}
 
     uv_data = df_line[1]
     df_line = df_line[0]
 
+    if date:
+        date_dt = datetime.strptime(date, '%Y-%m-%d')
+        df_line = df_line.loc[(df_line['time'] >= date_dt) & (df_line['time'] <= date_dt + timedelta(days=1))]
+        uv_data = uv_data.loc[(uv_data.index >= date_dt) & (uv_data.index <= date_dt + timedelta(days=1))]
+
     valence = go.Scatter(x = df_line['time'], y = df_line['Valence'],
             name = "Valence")
 
-    # df_data.dropna(subset=['time'], inplace=True)
-    max_time = 21
-    min_time = 9
+    max_time = max(df_line['time']).hour
+    min_time = min(df_line['time']).hour
     max_valence = max(df_line['Valence'])
-    min_valence = -2
+    min_valence = min(df_line['Valence'])
 
     layout = {'images': [],
             'paper_bgcolor': 'lightgray'}
-    for i in range(len(df_data['actions'])):
-        name = df_data['actions'][i]
-        if not name in df_data['meta']:
-            continue
-        time = pd.to_datetime(df_data['meta'][name]['times'][0], unit='ns')
-        cur_valence = interpolate_time(df_line, time)['Valence']
+    if date is not None:
+        for i in range(len(df_data['actions'])):
+            name = df_data['actions'][i]
+            if not name in df_data['meta']:
+                continue
+            time = pd.to_datetime(df_data['meta'][name]['times'][0], unit='ns')
+            if time < date_dt or time > date_dt + timedelta(days=1):
+                continue
+            
+            cur_valence = interpolate_time(df_line, time).iloc[0]['Valence']
+            icon_file = 'assets/%s.png'%name
+            if isfile(icon_file):
+                layout['images'].append({
+                    "x": (time.hour-min_time)/\
+                            (max_time-min_time),
+                    "y": (cur_valence-min_valence)/\
+                            (max_valence - min_valence + 1),
+                    'sizex': 0.08, 'sizey': 0.08,
+                    'source': icon_file,
+                    'xanchor': "left",
+                    'xref': "paper",
+                    'yanchor': "center",
+                    'yref': "paper"})
 
-        icon_file = 'assets/%s.png'%name
-        if isfile(icon_file):
-            layout['images'].append({
-                "x": (time.hour-min_time)/\
-                        (max_time-min_time),
-                "y": (cur_valence-min_valence)/\
-                        (max_valence - min_valence + 1),
-                'sizex': 0.08, 'sizey': 0.08,
-                'source': icon_file,
-                'xanchor': "left",
-                'xref': "paper",
-                'yanchor': "center",
-                'yref': "paper"})
+                layout['images'].append({
+                    "x": (time.hour-min_time)/\
+                            (max_time-min_time),
+                    "y": (cur_valence-min_valence)/\
+                            (max_valence - min_valence + 1),
+                    'sizex': 0.08, 'sizey': 0.08,
+                    'source': "/assets/green.png" if df_data['types'][i] == 'Pos' else\
+                            "/assets/red.png",
+                    'xanchor': "left",
+                    'xref': "paper",
+                    'yanchor': "center",
+                    'yref': "paper",
+                    'opacity': 0.3})
 
-            layout['images'].append({
-                "x": (time.hour-min_time)/\
-                        (max_time-min_time),
-                "y": (cur_valence-min_valence)/\
-                        (max_valence - min_valence + 1),
-                'sizex': 0.08, 'sizey': 0.08,
-                'source': "/assets/green.png" if df_data['types'][i] == 'Pos' else\
-                        "/assets/red.png",
-                'xanchor': "left",
-                'xref': "paper",
-                'yanchor': "center",
-                'yref': "paper",
-                'opacity': 0.3})
-
-            layout['yaxis'] = {'title': 'Valence'}
+                layout['yaxis'] = {'title': 'Valence'}
 
     if UV:
         UV_exposure = go.Scatter(x = uv_data.index, y = uv_data, name = "UV", yaxis='y2')
@@ -192,6 +185,9 @@ app.layout = html.Div(id='bottom', children = [
             dcc.Dropdown(id='uid', options=[{'label': x, 'value': x} for x in UIDs], value=UIDs[0]),
             dcc.Loading(id="loading-1", type="default", children=html.Div(id="loading-output-1")),
             html.Div(id='plot', children=[dcc.Graph(id = 'line_plot')]),
+            dcc.DatePickerSingle(id="date_pick", initial_visible_month=datetime(2019,5, 1),),
+            html.Br(),
+            html.Button("Clear Date", id = "date_clear", n_clicks = 0),
             html.Center([html.Button("Show UV Exposure", id = "UV_button",
                 n_clicks = 0)])
             ], style={'display': 'block'}),
@@ -221,15 +217,35 @@ def sync(uid):
 def callback_table(_):
     return [fill_table(datam.data)]
 
+
+@app.callback(
+        [Output('date_pick', 'min_date_allowed'),
+            Output('date_pick', 'max_date_allowed'),
+            Output('date_pick', 'initial_visible_month')],
+        [Input('sync','data')])
+def callback_datepick(_):
+    df_line = datam.line_data[0]
+    max_time = max(df_line['time'])
+    min_time = min(df_line['time'])
+    return min_time, max_time, min_time
+
+@app.callback(
+        Output("date_pick", "date"),
+        [Input("date_clear", "n_clicks")]
+        )
+def update_date(_):
+    return None
+
 @app.callback(
         Output("line_plot", 'figure'),
-        [Input("UV_button", "n_clicks"), Input('sync','data')]
+        [Input("UV_button", "n_clicks"), Input('sync','data'),
+            Input("date_pick", "date")]
         )
-def callback(n_clicks, _):
+def callback(n_clicks, _, date):
     if n_clicks % 2 == 0:
-        return line_plot(datam.line_data, datam.data, UV=False)
+        return line_plot(datam.line_data, datam.data, UV=False, date=date)
     else:
-        return line_plot(datam.line_data, datam.data, UV=True)
+        return line_plot(datam.line_data, datam.data, UV=True, date=date)
 
 
 @app.callback(
@@ -237,7 +253,7 @@ def callback(n_clicks, _):
        Output('line1', 'style'), Output('Pos', 'style')],
    [Input('Pos', 'n_clicks'), Input('sync','data')])
 def pospie(n_clicks, _):
-    if n_clicks % 2 == 0:
+    if n_clicks % 2 == 0 or datam.n_pos == 0:
         return {'display': 'none'}, pie_chart(datam.data), {'display': 'block'}, {'background-color': 'lightgray'}
     else:
         return {'display': 'block'}, pie_chart(datam.data, 'Pos'), {'display': 'none'}, {}
@@ -248,7 +264,7 @@ def pospie(n_clicks, _):
        Output('line2', 'style'), Output('Neg', 'style')],
    [Input('Neg', 'n_clicks'), Input('sync','data')])
 def negpie(n_clicks, _):
-    if n_clicks % 2 == 0:
+    if n_clicks % 2 == 0 or datam.n_neg == 0:
         return {'display': 'none'}, pie_chart(datam.data, 'Neg'), {'display': 'block'}, {'background-color': 'lightgray'}
     else:
         return {'display': 'block'}, pie_chart(datam.data, 'Neg'), {'display': 'none'}, {}
