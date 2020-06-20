@@ -127,6 +127,11 @@ def line_plot(df_line, df_data, UV = False, date=None):
     else:
         return {'data': [valence], 'layout': layout}
 
+def strfdelta(tdelta, fmt):
+    d = {"days": tdelta.days}
+    d["hours"], rem = divmod(tdelta.seconds, 3600)
+    d["minutes"], d["seconds"] = divmod(rem, 60)
+    return fmt.format(**d)
 
 def pie_chart(df, selected = 'Pos'):
     if df is None:
@@ -135,13 +140,26 @@ def pie_chart(df, selected = 'Pos'):
     colors = ['gold', 'mediumturquoise', 'darkorange', 'lightgreen']
     name = {'Pos': 'Positive', 'Neg': 'Negative'}
 
-    label, value = [], []
+    label, value, text = [], [], []
     for i in range(len(df['actions'])):
         if df['types'][i] == selected:
-            label.append(df['actions'][i])
+            l= df['actions'][i]
+            label.append(l)
             value.append(df['effects'][i])
+            s = ""
+            if l in df['meta']:
+                for j in range(min(len(df['meta'][l]['times']),len(df['meta'][l]['durations']))):
+                    time = str(pd.to_datetime(df['meta'][l]['times'][j]))[:16]
+                    duration = timedelta(milliseconds=df['meta'][l]['durations'][j])
+                    duration = strfdelta(duration, "duration: {hours:02d}:{minutes:02d}:{seconds:02d}")
+                    s += "{} ({}) <br>".format(time, duration)
+            text.append(s)
 
-    pie = go.Pie(labels=label, values=value, textinfo='label+percent', name = "pie")
+    pie = go.Pie(labels=label, values=value,
+            text = text,
+            textinfo = 'percent+label',
+            hovertemplate = "<b>%{label}</b><br><br>" + "%{text}",
+            name = "pie")
     layout = go.Layout(
         {
             "title": "Pie-chart (%s)" %name[selected]
@@ -158,7 +176,6 @@ def pie_chart(df, selected = 'Pos'):
         paper_bgcolor="LightSteelBlue"
     )
     return fig
-
 
 
 app.layout = html.Div(id='bottom', children = [
