@@ -68,14 +68,19 @@ def line_plot(df_line, df_data, UV = False, date=None):
     valence = go.Scatter(x = df_line['time'], y = df_line['Valence'],
             name = "Valence")
 
-    max_time = max(df_line['time']).hour
-    min_time = min(df_line['time']).hour
-    max_valence = max(df_line['Valence'])
-    min_valence = min(df_line['Valence'])
-
     layout = {'images': [],
-            'paper_bgcolor': 'lightgray'}
+            'paper_bgcolor': 'lightgray',
+            'xaxis': {'showgrid': False,
+                'title': 'Time'},
+            'yaxis': {'title': 'Emotion Polarity (valence)'}
+            }
+
     if date is not None:
+        max_time = max(df_line['time']).hour
+        min_time = min(df_line['time']).hour
+        max_valence = max(df_line['Valence'])
+        min_valence = min(df_line['Valence'])
+
         for i in range(len(df_data['actions'])):
             name = df_data['actions'][i]
             if not name in df_data['meta']:
@@ -113,7 +118,6 @@ def line_plot(df_line, df_data, UV = False, date=None):
                     'yref': "paper",
                     'opacity': 0.3})
 
-                layout['yaxis'] = {'title': 'Valence'}
 
     if UV:
         UV_exposure = go.Scatter(x = uv_data.index, y = uv_data, name = "UV", yaxis='y2')
@@ -129,6 +133,7 @@ def pie_chart(df, selected = 'Pos'):
         return None
 
     colors = ['gold', 'mediumturquoise', 'darkorange', 'lightgreen']
+    name = {'Pos': 'Positive', 'Neg': 'Negative'}
 
     label, value = [], []
     for i in range(len(df['actions'])):
@@ -139,7 +144,7 @@ def pie_chart(df, selected = 'Pos'):
     pie = go.Pie(labels=label, values=value, textinfo='label+percent', name = "pie")
     layout = go.Layout(
         {
-            "title": "Pie-chart (%s)" %selected
+            "title": "Pie-chart (%s)" %name[selected]
         }
     )
     fig = go.Figure(data=[pie], layout = layout)
@@ -176,13 +181,13 @@ app.layout = html.Div(id='bottom', children = [
         html.Div(className = 'tooltip', children = [
             html.Div(className = 'help', children = ["?"]),
             html.Div(className = 'tooltiptext', children = [
-                'Click on Positive or Negative'])
+                'Click on Positive or Negative for more information!'])
             ]),
         ]),
     html.Div(id='line2', children = [
         html.Div(id='line1', className = 'left', children = [
             html.H1("Positive & Negative Mood Influencers"),
-            dcc.Dropdown(id='uid', options=[{'label': x, 'value': x} for x in UIDs], value=UIDs[0]),
+            dcc.Dropdown(id='uid', options=[{'label': x, 'value': x} for x in UIDs], value=UIDs[0], clearable=False),
             dcc.Loading(id="loading-1", type="default", children=html.Div(id="loading-output-1")),
             html.Div(id='plot', children=[dcc.Graph(id = 'line_plot')]),
             dcc.DatePickerSingle(id="date_pick", initial_visible_month=datetime(2019,5, 1),),
@@ -225,8 +230,8 @@ def callback_table(_):
         [Input('sync','data')])
 def callback_datepick(_):
     df_line = datam.line_data[0]
-    max_time = max(df_line['time'])
-    min_time = min(df_line['time'])
+    max_time = max(df_line['time']).date()
+    min_time = min(df_line['time']).date()
     return min_time, max_time, min_time
 
 @app.callback(
@@ -254,7 +259,7 @@ def callback(n_clicks, _, date):
    [Input('Pos', 'n_clicks'), Input('sync','data')])
 def pospie(n_clicks, _):
     if n_clicks % 2 == 0 or datam.n_pos == 0:
-        return {'display': 'none'}, pie_chart(datam.data), {'display': 'block'}, {'background-color': 'lightgray'}
+        return {'display': 'none'}, pie_chart(datam.data), {'display': 'block'}, {'background-color': 'gray'}
     else:
         return {'display': 'block'}, pie_chart(datam.data, 'Pos'), {'display': 'none'}, {}
 
@@ -265,7 +270,7 @@ def pospie(n_clicks, _):
    [Input('Neg', 'n_clicks'), Input('sync','data')])
 def negpie(n_clicks, _):
     if n_clicks % 2 == 0 or datam.n_neg == 0:
-        return {'display': 'none'}, pie_chart(datam.data, 'Neg'), {'display': 'block'}, {'background-color': 'lightgray'}
+        return {'display': 'none'}, pie_chart(datam.data, 'Neg'), {'display': 'block'}, {'background-color': 'gray'}
     else:
         return {'display': 'block'}, pie_chart(datam.data, 'Neg'), {'display': 'none'}, {}
 
