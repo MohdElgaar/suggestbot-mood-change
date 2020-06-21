@@ -6,7 +6,7 @@ from collections import Counter
 
 pd.options.mode.chained_assignment = None
 
-debug = True
+debug = False
 
 class DataManager():
     def __init__(self):
