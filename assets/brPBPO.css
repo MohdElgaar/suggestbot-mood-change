@@ -1,3 +1,10 @@
+.content-table {
+border: 3px ridge  darkgray;
+text-align: center;
+border-collapse: separate;
+
+}
+
 ._dash-loading-callback {
   font-family: sans-serif;
   padding-top: 50px;

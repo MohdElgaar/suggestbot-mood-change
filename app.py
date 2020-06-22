@@ -12,7 +12,7 @@ from data import DataManager
 from os.path import isfile
 
 app = dash.Dash(__name__)
-app.title = 'Mood Swingers'
+app.title = 'Mood Tracker'
 server = app.server
 
 datam = DataManager()
@@ -43,7 +43,7 @@ def fill_table(df):
             rows.append(html.Tr([html.Td([p]), ""]))
     elif len(neg) > maxlen:
         for n in neg[maxlen:]:
-            rows.append(html.Tr([html.Td([n]), ""]))
+            rows.append(html.Tr(["", html.Td([n])]))
 
     return rows
 
@@ -72,7 +72,8 @@ def line_plot(df_line, df_data, UV = False, date=None):
             'paper_bgcolor': 'lightgray',
             'xaxis': {'showgrid': False,
                 'title': 'Time'},
-            'yaxis': {'title': 'Emotion Polarity (valence)'}
+            'yaxis': {'title': 'Emotion Polarity (valence)'},
+            'legend': {'x': '1'}
             }
 
     if date is not None:
@@ -137,7 +138,11 @@ def pie_chart(df, selected = 'Pos'):
     if df is None:
         return None
 
-    colors = ['gold', 'mediumturquoise', 'darkorange', 'lightgreen']
+    if selected == 'Pos':
+        colors = ['purple', 'darkblue', 'blue', 'mediumturquoise', 'skyblue', 'lightgreen']
+    else:
+        colors = ['red', 'darkorange', 'orange', 'gold', 'yellow']
+
     name = {'Pos': 'Positive', 'Neg': 'Negative'}
 
     label, value, text = [], [], []
@@ -210,7 +215,7 @@ app.layout = html.Div(id='bottom', children = [
             dcc.DatePickerSingle(id="date_pick", initial_visible_month=datetime(2019,5, 1),),
             html.Br(),
             html.Button("Clear Date", id = "date_clear", n_clicks = 0),
-            html.Center([html.Button("Show UV Exposure", id = "UV_button",
+            html.Center([html.Button("Show/Hide UV Exposure", id = "UV_button",
                 n_clicks = 0)])
             ], style={'display': 'block'}),
         ],
